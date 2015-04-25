@@ -1,0 +1,124 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'osgi'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+version = '1.2'
+group = 'org.openmuc'
+def projectName = 'j62056'
+
+sourceCompatibility = 1.6
+targetCompatibility = 1.6
+
+repositories { mavenCentral() }
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile files('dependencies/rxtxcomm_api-2.2pre2-11_bundle.jar')
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+            repository(url: project.properties.sonatypeRepository) {
+                authentication(userName: project.properties.sonatypeUser, password: project.properties.sonatypePass)
+            }
+            snapshotRepository(url: project.properties.sonatypeSnapshotRepository) {
+                authentication(userName: project.properties.sonatypeUser, password: project.properties.sonatypePass)
+            }
+
+            pom.project {
+                name projectName
+                packaging 'jar'
+                description 'j62056 is a library that can be used to implement a j62056-21 mode C master/client that reads meters.'
+                url 'http://www.openmuc.org/'
+
+                licenses {
+                    license {
+                        name 'GNU Lesser General Public License'
+                        url 'http://www.gnu.org/licenses/lgpl-2.1.html'
+                        distribution 'repo'
+                    }
+                }
+
+                scm {
+                    url 'none'
+                    connection 'none'
+                }
+
+                developers {
+                    developer {
+                        id 'sfeuerhahn'
+                        name 'Stefan Feuerhahn'
+                    }
+                }
+            }
+        }
+    }
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives jar
+    archives sourcesJar
+    archives javadocJar
+}
+
+signing {
+    if (hasProperty('project.properties.signing.keyId')) {
+        sign configurations.archives
+    }
+}
+
+jar {
+    manifest {
+        version = project.version.replace('-', '.');
+        name = projectName
+        instruction 'Export-Package', '!*.internal.*,*'
+    }
+}
+
+eclipse.pathVariables([GRADLE_USER_HOME: file(gradle.gradleUserHomeDir)])
+tasks.eclipse.dependsOn(cleanEclipse)
+
+task javadocs(type: Javadoc) {
+    source sourceSets.main.allJava
+
+    exclude '**/internal/**'
+
+    destinationDir = new File(buildDir, 'javadoc')
+
+    classpath = sourceSets.main.compileClasspath
+    classpath += sourceSets.main.output
+}
+
+task(tar, type: Tar) {
+    dependsOn(build)
+    dependsOn(javadocs)
+
+    compression = Compression.GZIP
+
+    into(project.archivesBaseName) {
+        from('./') {
+            include 'doc/**/*'
+            include 'licenses/**/*'
+            include 'build/libs/**/*'
+            include 'build/javadoc/**/*'
+            include 'build.gradle'
+            include 'dependencies/**/*'
+            include 'src/**/*'
+        }
+    }
+}

@@ -1,0 +1,31 @@
+v1.2 10-Jan-2014
+----------------
+- read now throws TimeoutException so it can be distinguished from
+  other IOExceptions
+- minor performance improvement with charset
+- prepared build file for upload to central maven repository
+
+v1.1.1 10-Dec-2013
+------------------
+- Moved sample ReadMeter application into library and improved its
+  documentation
+
+v1.1.0 05-Dec-2013
+------------------
+- fixed parsing of unit of last data set (thanks to Gerrie de Jager)
+- changed timeout behaviour. The timeout is now the maximum time that
+  the master will listen for the next byte. It used to be the maximum
+  time the whole read process may take. The default timeout was
+  changed from 30s to 5s.
+- a timeout will now cause an IOException to be thrown instead of
+  returning null
+- removed disabling of baud rate change and instead added a delay
+  parameter for the baud rate change. This is needed for most USB to
+  serial adapters. (thanks to Gerrie de Jager)
+- the first data set in the list returned by read() will now contain
+  the meter identification as received in the Identification Message
+  from the slave.
+
+v1.0.0 15-Nov-2013
+------------------
+- first version
